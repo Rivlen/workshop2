@@ -1,89 +1,74 @@
-from psycopg2 import connect, OperationalError, Error, sql, DatabaseError
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+from psycopg2 import connect, OperationalError, errors, sql
 
-try:
-    # Connect to PostgreSQL DBMS
-    con = connect(user='postgres', password='coderslab', host='localhost', port='5433')
-    con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-    cursor = con.cursor()
-    # Create database
-    create_database_query = f'CREATE DATABASE workshop2'
-    cursor.execute(create_database_query)
-    print(f"Database 'workshop2' created successfully")
-    # Closing the connection
-    cursor.close()
-    con.close()
+db_connector = {
+    'user': 'postgres',
+    'password': 'coderslab',
+    'host': 'localhost',
+    'port': '5433',
+    'database': 'exercise_db'
+}
 
-except Error as e:
-    print(f"An error occurred: {e}")
 
-try:
-    cnx = connect(
-        user='postgres',
-        password='coderslab',
-        host='localhost',
-        port='5433',
-        database='workshop2'
-    )
-
-    cursor = cnx.cursor()
-    print('Connected')
-except OperationalError as err:
-    print('Connection error')
-    raise ValueError(f'Connection error: {err}')
-
-query_create_table_users = sql.SQL("""
-    CREATE TABLE IF NOT EXISTS {table_name} (
-        id SERIAL,
-        name VARCHAR(50) NOT NULL,
-        email VARCHAR(120) UNIQUE,
-        password VARCHAR(60) DEFAULT 'ala',
-        PRIMARY KEY (id)
-    )
-""").format(table_name=sql.Identifier('users'))
-
-with cnx:
+def create_database():
     try:
-        cursor.execute(query_create_table_users)
-    except DatabaseError as err:
-        print(err)
+        cnx = connect(**db_connector)
+        cnx.autocommit = True
+        with cnx.cursor() as cursor:
+            cursor.execute("CREATE DATABASE exercise_db;")
+            print("Database 'exercise_db' has been created.")
+        cnx.close()
+    except errors.DuplicateDatabase:
+        print("Database 'exercise_db' already exists.")
+    except OperationalError as err:
+        print(f'Connection error while creating database: {err}')
+        raise
 
-query_create_table_message = sql.SQL("""
-    CREATE TABLE {table_name} (
-        id SERIAL,
-        from_id VARCHAR(255) NOT NULL
-    )
-""").format(table_name=sql.Identifier('test1234'))
 
-# with cnx:
-#     try:
-#         cursor.execute(query_create_table_message)
-#     except DatabaseError as err:
-#         print(err)
+def create_users_table():
+    try:
+        with connect(**db_connector) as cnx:
+            cnx.autocommit = True
+            with cnx.cursor() as cursor:
+                create_table_query = sql.SQL("""
+                    CREATE TABLE IF NOT EXISTS users (
+                        id SERIAL PRIMARY KEY,
+                        username VARCHAR(255),
+                        hashed_password VARCHAR(80)
+                    );
+                """)
+                cursor.execute(create_table_query)
+                print("Table 'users' has been created or already exists.")
+    except OperationalError as err:
+        print(f'Connection error while creating table: {err}')
+        raise
 
-query_select = sql.SQL("""
-    SELECT *
-    FROM user
-""").format(table_name=sql.Identifier('user'))
 
-query_insert = sql.SQL("""
-    INSERT INTO user (username, hashed_password)
-    VALUES ('Jarosław', 'Kowalski');
-""").format(table_name=sql.Identifier('user'))
+def create_messages_table():
+    try:
+        with connect(**db_connector) as cnx:
+            cnx.autocommit = True
+            with cnx.cursor() as cursor:
+                create_table_query = sql.SQL("""
+                    CREATE TABLE IF NOT EXISTS messages (
+                        id SERIAL PRIMARY KEY,
+                        from_id INTEGER REFERENCES users(id),
+                        to_id INTEGER REFERENCES users(id),
+                        creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        text VARCHAR(255)
+                    );
+                """)
+                cursor.execute(create_table_query)
+                print("Table 'messages' has been created or already exists.")
+    except OperationalError as err:
+        print(f"Connection error while creating the 'messages' table: {err}")
+        raise
 
-# with cnx:
-#     try:
-#         cursor.execute(query_select)
-#         print(cursor.fetchall())
-#     except DatabaseError as err:
-#         print(err)
 
-query_drop_user = sql.SQL("""
-    DROP TABLE user
-""").format(table_name=sql.Identifier('user'))
+def main():
+    create_database()
+    create_users_table()
+    create_messages_table()
 
-# with cnx:
-#     try:
-#         cursor.execute(query_drop_user)
-#     except DatabaseError as err:
-#         print(err)
+
+if __name__ == "__main__":
+    main()
