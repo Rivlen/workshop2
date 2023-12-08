@@ -10,5 +10,17 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
 
+  postgres_db2:
+    image: postgres
+    ports:
+      - 5434:5432
+    volumes:
+      - postgres2:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: coderslab
+      POSTGRES_USER: postgres
+      POSTGRES_DB: firma
+
 volumes:
   postgres:
+  postgres2:
