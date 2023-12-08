@@ -11,10 +11,6 @@ class User:
     def id(self):
         return self._id
 
-    # @id.setter
-    # def id(self, number):
-    #     self._id = number
-
     @property
     def hashed_password(self):
         return self._hashed_password
