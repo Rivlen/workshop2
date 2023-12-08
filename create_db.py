@@ -47,6 +47,25 @@ def query_create_tb_users(db_connector):
         print(err)
 
 
+def query_create_tb_messages(db_connector):
+    create_table_query = sql.SQL("""
+                        CREATE TABLE IF NOT EXISTS {table_name} (
+                        id SERIAL PRIMARY KEY,
+                        from_id INTEGER REFERENCES users(id),
+                        to_id INTEGER REFERENCES users(id),
+                        creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        text VARCHAR(255)
+                        );
+                    """).format(table_name=sql.Identifier('messages'))
+    try:
+        with connect(**db_connector) as cnx:
+            cnx.autocommit = True
+            cursor = cnx.cursor()
+            cursor.execute(create_table_query)
+    except OperationalError as err:
+        print(err)
+
+
 def query_insert_into_tb(db_connector):
     insert_table_query = sql.SQL("""
                         INSERT INTO {table_name} (username, hashed_password)
@@ -65,7 +84,7 @@ def query_insert_into_tb(db_connector):
 def query_select_tb(db_connector):
     insert_table_query = sql.SQL("""
                         SELECT *
-                        FROM users;
+                        FROM {table_name};
                     """).format(table_name=sql.Identifier('users'))
     try:
         with connect(**db_connector) as cnx:
