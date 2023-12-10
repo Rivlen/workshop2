@@ -1,9 +1,9 @@
 from create_db import *
-from models import User
-
+from models import User, Message
 
 db = 'workshop2'
 
+# creating db
 # connector = {
 #     'user': 'postgres',
 #     'password': 'coderslab',
@@ -21,6 +21,3 @@ connector = {
     'database': db
 }
 
-# query_create_tb_users(connector)
-# query_insert_into_tb(connector)
-query_select_tb(connector)
